@@ -1,0 +1,7 @@
+tracker_type: bytetrack
+track_high_thresh: 0.5     # asosiasi tahap 1 (deteksi confidence tinggi)
+track_low_thresh: 0.1      # asosiasi tahap 2 (deteksi confidence rendah -> tahan oklusi)
+new_track_thresh: 0.6      # ambang membuat ID baru (naikkan bila ID terlalu sering baru)
+track_buffer: 90           # frame track "hilang" dipertahankan (~3 dtk @30fps) -> oklusi singkat
+match_thresh: 0.8
+fuse_score: True

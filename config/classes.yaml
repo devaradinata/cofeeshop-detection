@@ -1,0 +1,13 @@
+# Konfigurasi dataset YOLO (format Ultralytics)
+# `path` relatif terhadap root proyek; train.py/eval.py otomatis mengubahnya jadi absolut.
+path: dataset
+train: train/images
+val: val/images
+test: test/images
+
+nc: 4
+names:
+  0: person        # pelanggan
+  1: chair         # kursi / seat
+  2: table         # meja
+  3: belongings    # laptop, tas/ransel, buku, botol/gelas

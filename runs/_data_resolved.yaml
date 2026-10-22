@@ -1,0 +1,10 @@
+path: D:\0_KULIYAH\TI SEMESTER 3\KECERDASAN TIRUAN\coffee-shop-occupancy\dataset
+train: train/images
+val: val/images
+test: test/images
+nc: 4
+names:
+  0: person
+  1: chair
+  2: table
+  3: belongings

@@ -1,0 +1,8 @@
+ultralytics>=8.3.0
+opencv-python>=4.8
+numpy>=1.24
+PyYAML>=6.0
+lap>=0.5.12            # dibutuhkan ByteTrack/BoT-SORT di Ultralytics
+motmetrics>=1.4.0      # IDF1, ID switches (Phase 2)
+shapely>=2.0           # Phase 3
+streamlit>=1.35        # Phase 4
