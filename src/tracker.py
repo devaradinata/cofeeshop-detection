@@ -20,11 +20,12 @@ from typing import Iterator, List, Optional, Tuple
 
 import cv2
 import numpy as np
+import yaml
 from ultralytics.trackers.bot_sort import BOTSORT
 from ultralytics.trackers.byte_tracker import BYTETracker
-from ultralytics.utils import IterableSimpleNamespace, yaml_load
+from ultralytics.utils import IterableSimpleNamespace
 
-from src.detector import Detection, Detector
+from src.detector import Detection, Detector, resolve_model_weights
 from src.utils import ROOT
 
 DEFAULT_CFG = {"bytetrack": ROOT / "config" / "bytetrack.yaml",
@@ -51,7 +52,10 @@ class PersonTracker:
     def __init__(self, person_cls_id: int, tracker_type: str = "bytetrack",
                  cfg_path: Optional[str] = None, frame_rate: int = 30):
         self.person_cls_id = person_cls_id
-        cfg = IterableSimpleNamespace(**yaml_load(str(cfg_path or DEFAULT_CFG[tracker_type])))
+        cfg_file = Path(cfg_path or DEFAULT_CFG[tracker_type])
+        with open(cfg_file, "r", encoding="utf-8") as f:
+            cfg_dict = yaml.safe_load(f)
+        cfg = IterableSimpleNamespace(**cfg_dict)
         cls = {"bytetrack": BYTETracker, "botsort": BOTSORT}[tracker_type]
         self.tracker = cls(args=cfg, frame_rate=frame_rate)
 
@@ -66,7 +70,7 @@ class PersonTracker:
         return [TrackedPerson(int(t[4]), tuple(map(float, t[:4])), float(t[5])) for t in tracks]
 
 
-def track_video(source: str, weights: str, tracker_type: str = "bytetrack",
+def track_video(source: str, weights: Optional[str] = None, tracker_type: str = "bytetrack",
                 conf: float = 0.25, imgsz: int = 640, device: Optional[str] = None,
                 tracker_cfg: Optional[str] = None) -> Iterator[FrameResult]:
     """Generator utama: dipakai CLI ini dan nanti oleh pipeline Phase 3/4."""
@@ -119,7 +123,7 @@ def draw(res: FrameResult, person_name: str = "person") -> np.ndarray:
 def main():
     ap = argparse.ArgumentParser(description="Person tracking (ByteTrack / BoT-SORT)")
     ap.add_argument("--source", required=True, help="path video / index webcam / URL RTSP")
-    ap.add_argument("--weights", default="models/best_yolo.pt")
+    ap.add_argument("--weights", default="yolov8s.pt")
     ap.add_argument("--tracker", choices=["bytetrack", "botsort"], default="bytetrack")
     ap.add_argument("--tracker-cfg", default=None, help="override YAML tracker")
     ap.add_argument("--conf", type=float, default=0.25)

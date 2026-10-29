@@ -3,7 +3,7 @@ from ultralytics import YOLO
 from pathlib import Path
 
 # Lokasi video
-video_path = Path("data/videos/coffee_shop.mp4")
+video_path = Path("data/videos/kopisop.mp4")
 
 if not video_path.exists():
     raise FileNotFoundError(

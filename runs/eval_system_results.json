@@ -1,0 +1,117 @@
+{
+  "timestamp": "2026-10-28 18:42:32",
+  "video_source": "data/videos/kopisop.mp4",
+  "model_weights": "yolov8s.pt",
+  "dataset_ground_truth_status": "Custom annotations in dataset/train/val/test are currently empty. Evaluation was conducted on video data with rule verification and latency benchmarking.",
+  "exp_a": {
+    "experiment": "A - Detection Baseline",
+    "processed_frames": 60,
+    "avg_latency_ms": 229.7,
+    "processing_fps": 4.35,
+    "total_detections": 2618,
+    "category_counts": {
+      "person": 660,
+      "seat": 1130,
+      "table": 338,
+      "belongings": 379,
+      "other": 111
+    },
+    "notes": "Raw single-frame YOLOv8 detections without temporal tracking or spatial state machines."
+  },
+  "exp_b": {
+    "experiment": "B - Detection & Tracking (bytetrack)",
+    "processed_frames": 60,
+    "avg_latency_ms": 215.79,
+    "processing_fps": 4.63,
+    "unique_person_tracks": 12,
+    "avg_person_track_duration_sec": 1.9,
+    "max_person_track_duration_sec": 2.5,
+    "notes": "ByteTrack/BoT-SORT maintains persistent person identities and measures visible person presence."
+  },
+  "exp_c": {
+    "experiment": "C - Full Context-Aware Seating Pipeline",
+    "processed_frames": 60,
+    "final_occupancy_rate_pct": 42.9,
+    "final_occupied_seats": 6,
+    "final_total_seats": 14,
+    "final_seating_pressure": "MEDIUM",
+    "seating_pressure_distribution": {
+      "LOW": 0,
+      "MEDIUM": 60,
+      "HIGH": 0
+    },
+    "table_state_sample_distribution": {
+      "AVAILABLE": 114,
+      "OCCUPIED": 306,
+      "RESERVED_BY_BELONGINGS": 0,
+      "UNKNOWN": 0
+    },
+    "tables_approaching_or_overtime": 0,
+    "tables_detail": {
+      "T1": {
+        "status": "OCCUPIED",
+        "occupancy_duration_sec": 2.46,
+        "warning": "NORMAL",
+        "active_persons": [
+          1,
+          2
+        ],
+        "belongings_count": 0
+      },
+      "T2": {
+        "status": "OCCUPIED",
+        "occupancy_duration_sec": 2.46,
+        "warning": "NORMAL",
+        "active_persons": [
+          4
+        ],
+        "belongings_count": 2
+      },
+      "T3": {
+        "status": "OCCUPIED",
+        "occupancy_duration_sec": 2.46,
+        "warning": "NORMAL",
+        "active_persons": [
+          7,
+          10
+        ],
+        "belongings_count": 1
+      },
+      "T4": {
+        "status": "AVAILABLE",
+        "occupancy_duration_sec": 0.0,
+        "warning": "NORMAL",
+        "active_persons": [],
+        "belongings_count": 0
+      },
+      "T5": {
+        "status": "OCCUPIED",
+        "occupancy_duration_sec": 2.46,
+        "warning": "NORMAL",
+        "active_persons": [
+          3
+        ],
+        "belongings_count": 1
+      },
+      "T6": {
+        "status": "OCCUPIED",
+        "occupancy_duration_sec": 0.21,
+        "warning": "NORMAL",
+        "active_persons": [
+          12
+        ],
+        "belongings_count": 0
+      },
+      "T7": {
+        "status": "OCCUPIED",
+        "occupancy_duration_sec": 2.46,
+        "warning": "NORMAL",
+        "active_persons": [
+          5
+        ],
+        "belongings_count": 1
+      }
+    },
+    "notes": "Full end-to-end context-aware pipeline with spatial mapping, belongings association, and duration monitoring."
+  }
+}

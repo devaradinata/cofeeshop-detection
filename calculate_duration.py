@@ -3,8 +3,8 @@ from ultralytics import YOLO
 from pathlib import Path
 from collections import defaultdict
 
-# Lokasi video
-video_path = Path("data/videos/coffee_shop.mp4")
+# Lokasi video (default ke kopisop.mp4)
+video_path = Path("data/videos/kopisop.mp4") if Path("data/videos/kopisop.mp4").exists() else Path("data/videos/coffee_shop.mp4")
 
 if not video_path.exists():
     raise FileNotFoundError(
@@ -35,7 +35,7 @@ results = model.track(
     verbose=False
 )
 
-for result in results:
+for frame_idx, result in enumerate(results):
     if result.boxes is None or result.boxes.id is None:
         continue
 
@@ -49,14 +49,17 @@ for result in results:
         track_id = int(box.id[0])
         person_frames[track_id] += 1
 
+    if frame_idx >= 50:  # Batasi preview terminal
+        break
+
 # Menampilkan perkiraan durasi terlihat
-print("\n=== DURASI KEMUNCULAN ORANG ===")
+print("\n=== DURASI KEMUNCULAN ORANG (PERSON VISIBILITY DURATION) ===")
 
 for track_id, frame_count in sorted(person_frames.items()):
     duration = frame_count / fps
     print(
         f"ID {track_id}: "
-        f"{duration:.2f} detik terdeteksi"
+        f"{duration:.2f} detik terdeteksi ({frame_count} frame)"
     )
 
 print("\nPenghitungan selesai.")
