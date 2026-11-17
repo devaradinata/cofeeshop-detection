@@ -1,4 +1,4 @@
-path: D:\0_KULIYAH\TI SEMESTER 3\KECERDASAN TIRUAN\coffee-shop-occupancy\dataset
+path: C:\Users\dinat\Documents\TUGAS KULIAH\SEMESTER 3\Kecerdasan Tiruan\cofeeshop-detection\dataset
 train: train/images
 val: val/images
 test: test/images

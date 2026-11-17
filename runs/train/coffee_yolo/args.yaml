@@ -1,21 +1,22 @@
 task: detect
 mode: train
 model: yolov8s.pt
-data: D:\0_KULIYAH\TI SEMESTER 3\KECERDASAN TIRUAN\coffee-shop-occupancy\runs\_data_resolved.yaml
-epochs: 100
+data: C:\Users\dinat\Documents\TUGAS KULIAH\SEMESTER 3\Kecerdasan Tiruan\cofeeshop-detection\runs\_data_resolved.yaml
+epochs: 30
 time: null
-patience: 30
+patience: 20
 batch: 16
 imgsz: 640
 save: true
 save_period: -1
 cache: false
-device: cpu
-workers: 8
-project: D:\0_KULIYAH\TI SEMESTER 3\KECERDASAN TIRUAN\coffee-shop-occupancy\runs\train
+device: '0'
+workers: 2
+project: C:\Users\dinat\Documents\TUGAS KULIAH\SEMESTER 3\Kecerdasan Tiruan\cofeeshop-detection\runs\train
 name: coffee_yolo
 exist_ok: true
 pretrained: true
+cls_remap: true
 optimizer: auto
 verbose: true
 seed: 42
@@ -23,14 +24,15 @@ deterministic: true
 single_cls: false
 rect: false
 cos_lr: false
-close_mosaic: 10
+close_mosaic: 3
 resume: false
 amp: true
 fraction: 1.0
 profile: false
 freeze: null
-multi_scale: false
+multi_scale: 0.0
 compile: false
+channels_last: null
 overlap_mask: true
 mask_ratio: 4
 dropout: 0.0
@@ -40,9 +42,10 @@ save_json: false
 conf: null
 iou: 0.7
 max_det: 300
-half: false
+quantize: null
 dnn: false
 plots: true
+nms: null
 source: null
 vid_stride: 1
 stream_buffer: false
@@ -62,14 +65,11 @@ show_conf: true
 show_boxes: true
 line_width: null
 format: torchscript
-keras: false
 optimize: false
-int8: false
 dynamic: false
 simplify: true
 opset: null
 workspace: null
-nms: false
 lr0: 0.01
 lrf: 0.01
 momentum: 0.937
@@ -77,11 +77,19 @@ weight_decay: 0.0005
 warmup_epochs: 3.0
 warmup_momentum: 0.8
 warmup_bias_lr: 0.1
+distill_model: null
+dis: 6.0
 box: 7.5
 cls: 0.5
+cls_pw: 0.0
 dfl: 1.5
 pose: 12.0
 kobj: 1.0
+rle: 1.0
+angle: 1.0
+dlog: 1.0
+dgrad: 0.5
+dlam: 1.0
 nbs: 64
 hsv_h: 0.015
 hsv_s: 0.6
@@ -102,5 +110,5 @@ copy_paste_mode: flip
 auto_augment: randaugment
 erasing: 0.4
 cfg: null
-tracker: botsort.yaml
-save_dir: D:\0_KULIYAH\TI SEMESTER 3\KECERDASAN TIRUAN\coffee-shop-occupancy\runs\train\coffee_yolo
+tracker: tracktrack.yaml
+save_dir: C:\Users\dinat\Documents\TUGAS KULIAH\SEMESTER 3\Kecerdasan Tiruan\cofeeshop-detection\runs\train\coffee_yolo

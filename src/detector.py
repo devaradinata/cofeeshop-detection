@@ -9,7 +9,8 @@ from ultralytics import YOLO
 from src.utils import ROOT
 
 BELONGINGS_COCO: Set[str] = {
-    "laptop", "backpack", "handbag", "suitcase", "book", "bottle", "cup", "cell phone"
+    "laptop", "backpack", "handbag", "suitcase", "book", "bottle", "cup",
+    "cell phone", "mouse", "keyboard", "bowl", "plate"
 }
 SEAT_COCO: Set[str] = {"chair", "couch", "bench"}
 TABLE_COCO: Set[str] = {"dining table", "table"}
@@ -44,12 +45,14 @@ def resolve_model_weights(weights: Optional[str] = None) -> str:
 class Detector:
     def __init__(self, weights: Optional[str] = None, conf: float = 0.25,
                  iou: float = 0.45, imgsz: int = 640, device: Optional[str] = None,
-                 half: bool = False):
+                 half: bool = False, belongings_conf: Optional[float] = None):
         resolved_weights = resolve_model_weights(weights)
         self.weights_path = resolved_weights
         self.model = YOLO(resolved_weights)
         self.conf, self.iou, self.imgsz = conf, iou, imgsz
         self.device, self.half = device, half
+        # Objek kecil di meja CCTV (buku, tas, botol, dll) memiliki skor lebih sensitif
+        self.belongings_conf = belongings_conf if belongings_conf is not None else min(conf, 0.15)
         self.names = self.model.names  # {id: name}
 
     def class_id(self, name: str) -> Optional[int]:
@@ -72,18 +75,27 @@ class Detector:
 
     def detect(self, frame: np.ndarray):
         """Return (list[Detection], ultralytics Boxes). Boxes dipakai langsung oleh tracker."""
-        res = self.model.predict(frame, conf=self.conf, iou=self.iou, imgsz=self.imgsz,
+        min_conf = min(self.conf, self.belongings_conf)
+        res = self.model.predict(frame, conf=min_conf, iou=self.iou, imgsz=self.imgsz,
                                  device=self.device, half=self.half, verbose=False)[0]
         dets: List[Detection] = []
-        for b in res.boxes:
+        valid_indices = []
+        for i, b in enumerate(res.boxes):
             cid = int(b.cls.item())
             cname = self.names[cid]
             cat = self.get_category(cname)
-            dets.append(Detection(
-                xyxy=tuple(b.xyxy[0].tolist()),
-                conf=float(b.conf.item()),
-                cls_id=cid,
-                cls_name=cname,
-                category=cat
-            ))
-        return dets, res.boxes
+            cconf = float(b.conf.item())
+            
+            thresh = self.belongings_conf if cat == "belongings" else self.conf
+            if cconf >= thresh:
+                dets.append(Detection(
+                    xyxy=tuple(b.xyxy[0].tolist()),
+                    conf=cconf,
+                    cls_id=cid,
+                    cls_name=cname,
+                    category=cat
+                ))
+                valid_indices.append(i)
+                
+        boxes = res.boxes[valid_indices] if len(valid_indices) < len(res.boxes) else res.boxes
+        return dets, boxes

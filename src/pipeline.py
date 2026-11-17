@@ -42,7 +42,7 @@ STATUS_COLORS = {
 @dataclass
 class PipelineConfig:
     video_source: str = "data/videos/kopisop.mp4"
-    model_weights: str = "yolov8s.pt"
+    model_weights: str = resolve_model_weights("models/best_yolo.pt")
     roi_config_path: str = "config/roi_config.json"
     tracker_type: str = "bytetrack"
     tracker_cfg: Optional[str] = None

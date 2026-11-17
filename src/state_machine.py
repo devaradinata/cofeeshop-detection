@@ -56,6 +56,7 @@ class RegionState:
     
     # Internal temporal tracking
     last_seen_person_time: Optional[float] = None
+    first_seen_person_time: Optional[float] = None
     last_seen_belongings_time: Optional[float] = None
     belongings_start_time: Optional[float] = None
     empty_since_time: Optional[float] = None
@@ -102,7 +103,8 @@ class SeatingStateMachine:
         person_ids: List[int],
         belongings: List[Detection],
         is_ambiguous: bool,
-        current_time: float
+        current_time: float,
+        is_confirmed_immediately: bool = False
     ):
         has_person = len(person_ids) > 0
         has_belongings = len(belongings) > 0
@@ -137,28 +139,41 @@ class SeatingStateMachine:
 
         # 3. State transitions
         if has_person:
-            # Condition 1: Customer associated with table -> OCCUPIED
-            state.availability_state = AvailabilityState.OCCUPIED
+            if state.first_seen_person_time is None:
+                state.first_seen_person_time = current_time
 
-            # Start or maintain occupancy session
-            if state.current_session is None or not state.current_session.is_active:
-                state.session_counter += 1
-                state.current_session = OccupancySession(
-                    session_id=f"{state.region_id}_sess_{state.session_counter}",
-                    region_id=state.region_id,
-                    start_time=current_time,
-                    last_active_time=current_time,
-                    associated_person_ids=set(person_ids),
-                    is_active=True
-                )
-            else:
-                state.current_session.last_active_time = current_time
-                state.current_session.associated_person_ids.update(person_ids)
+            presence_duration = current_time - state.first_seen_person_time
+            # Konfirmasi kehadiran temporal: orang yang hanya lewat sekilas (< confirmation_seconds)
+            # tidak langsung mengubah status meja menjadi OCCUPIED
+            is_confirmed = (
+                is_confirmed_immediately
+                or state.availability_state == AvailabilityState.OCCUPIED
+                or presence_duration >= self.confirmation_seconds
+            )
 
-            state.occupancy_duration = state.current_session.duration(current_time)
-            state.belongings_duration = 0.0
+            if is_confirmed:
+                state.availability_state = AvailabilityState.OCCUPIED
+
+                # Start or maintain occupancy session
+                if state.current_session is None or not state.current_session.is_active:
+                    state.session_counter += 1
+                    state.current_session = OccupancySession(
+                        session_id=f"{state.region_id}_sess_{state.session_counter}",
+                        region_id=state.region_id,
+                        start_time=state.first_seen_person_time or current_time,
+                        last_active_time=current_time,
+                        associated_person_ids=set(person_ids),
+                        is_active=True
+                    )
+                else:
+                    state.current_session.last_active_time = current_time
+                    state.current_session.associated_person_ids.update(person_ids)
+
+                state.occupancy_duration = state.current_session.duration(current_time)
+                state.belongings_duration = 0.0
 
         else:
+            state.first_seen_person_time = None
             # No customer currently visible
             time_since_person = (
                 current_time - state.last_seen_person_time
@@ -232,17 +247,26 @@ class SeatingStateMachine:
                 self.person_first_seen[pid] = current_time
             self.person_last_seen[pid] = current_time
 
+        # Check which seats have persons
+        occupied_seat_ids = {s_id for s_id, p_ids in association.seat_persons.items() if len(p_ids) > 0}
+
         # Update Tables
         for t_id, t_state in self.table_states.items():
             p_ids = association.table_persons.get(t_id, [])
             belongings = association.table_belongings.get(t_id, [])
             is_ambig = association.table_ambiguous.get(t_id, False)
-            self._update_region(t_state, p_ids, belongings, is_ambig, current_time)
+            # Konfirmasi langsung jika ada orang yang benar-benar duduk di kursi meja ini
+            prefix = t_id[1:] if t_id.startswith("T") else t_id
+            table_seat_has_person = any(
+                s_id.startswith(f"{t_id}-") or s_id.startswith(f"S{prefix}-") or s_id.startswith(f"S{prefix}")
+                for s_id in occupied_seat_ids
+            )
+            self._update_region(t_state, p_ids, belongings, is_ambig, current_time, is_confirmed_immediately=table_seat_has_person)
 
         # Update Seats
         for s_id, s_state in self.seat_states.items():
             p_ids = association.seat_persons.get(s_id, [])
             belongings = association.seat_belongings.get(s_id, [])
             is_ambig = association.seat_ambiguous.get(s_id, False)
-            self._update_region(s_state, p_ids, belongings, is_ambig, current_time)
+            self._update_region(s_state, p_ids, belongings, is_ambig, current_time, is_confirmed_immediately=True)
 

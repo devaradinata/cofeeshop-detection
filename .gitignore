@@ -1,0 +1,70 @@
+# ==========================================
+# 1. Python & Virtual Environment
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+.venv/
+env/
+ENV/
+.pytest_cache/
+
+# ==========================================
+# 2. Output Training, Deteksi & Dataset
+# ==========================================
+runs/
+outputs/
+results/
+predict/
+dataset/
+
+# ==========================================
+# 3. Bobot Model AI (Weights & Checkpoints)
+# ==========================================
+weights/
+models/*.pt
+models/*.pth
+models/*.onnx
+*.pt
+*.pth
+*.onnx
+*.weights
+*.h5
+*.tflite
+
+# ==========================================
+# 4. File Gambar & Video Hasil Frame
+# ==========================================
+# Abaikan semua file video & gambar di seluruh proyek
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.jpg
+*.jpeg
+*.png
+
+# ==========================================
+# 5. Pengecualian (Whitelist File Sample)
+# ==========================================
+# Izinkan folder & video sample di data/videos/uploads/
+!data/
+!data/videos/
+!data/videos/uploads/
+!data/videos/uploads/*.mp4
+
+# (Opsional) Izinkan gambar sample di root proyek jika dibutuhkan
+!bus.jpg
+!coffee_shop.jpg
+!coffee_shop.png
+!coffeshop.jpeg
+
+# ==========================================
+# 6. Sistem & IDE
+# ==========================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

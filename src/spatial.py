@@ -182,12 +182,22 @@ class SeatingLayout:
             p_poly = box_to_polygon(p.xyxy)
             p_centroid = box_centroid(p.xyxy)
             p_foot = box_footpoint(p.xyxy)
+            pw = max(p.xyxy[2] - p.xyxy[0], 1.0)
+            ph = max(p.xyxy[3] - p.xyxy[1], 1.0)
+            aspect_ratio = ph / pw  # orang berdiri berjalan umumnya > 1.9, duduk <= 1.6
             associated_any = False
 
             # First check individual seats
             best_seat: Optional[Tuple[str, float]] = None
             second_seat_score = 0.0
             for s_id, seat in self.seats.items():
+                # Filter oklusi latar depan: pelanggan di latar depan tidak boleh diasosiasikan ke kursi belakang
+                if p_foot.y > seat.bounds[3] + 30.0:
+                    continue
+                # Filter orang berdiri/lewat: pelanggan duduk memiliki aspect_ratio <= 1.6
+                if aspect_ratio > 1.9:
+                    continue
+
                 ioa = intersection_over_box_area(p_poly, seat.shapely)
                 point_in = 1.0 if (seat.shapely.contains(p_centroid) or seat.shapely.contains(p_foot)) else 0.0
                 score = max(ioa, point_in * 0.5)
@@ -212,10 +222,22 @@ class SeatingLayout:
             # If not associated with a seat, check table region directly
             if not associated_any:
                 best_table: Optional[Tuple[str, float]] = None
+
                 for t_id, table in self.tables.items():
+                    # Filter oklusi latar depan: kepala/badan orang di meja depan menutupi meja belakang
+                    if p_foot.y > table.bounds[3] + 40.0:
+                        continue
+
                     ioa = intersection_over_box_area(p_poly, table.shapely)
-                    point_in = 1.0 if (table.shapely.contains(p_centroid) or table.shapely.contains(p_foot)) else 0.0
-                    score = max(ioa, point_in * 0.4)
+                    foot_in = 1.0 if table.shapely.contains(p_foot) else 0.0
+                    centroid_in = 1.0 if table.shapely.contains(p_centroid) else 0.0
+
+                    # Filter orang lewat di lorong belakang atau samping meja:
+                    # Orang berdiri/berjalan (aspect_ratio > 1.9) yang centroid-nya tidak berada di meja
+                    if aspect_ratio > 1.9 and centroid_in == 0.0:
+                        continue
+
+                    score = max(ioa, (foot_in * 0.6 + centroid_in * 0.4))
                     if score >= min_person_ioa:
                         if best_table is None or score > best_table[1]:
                             best_table = (t_id, score)

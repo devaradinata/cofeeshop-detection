@@ -56,8 +56,13 @@ class PersonTracker:
         with open(cfg_file, "r", encoding="utf-8") as f:
             cfg_dict = yaml.safe_load(f)
         cfg = IterableSimpleNamespace(**cfg_dict)
+        if not hasattr(cfg, "fps"):
+            cfg.fps = frame_rate
         cls = {"bytetrack": BYTETracker, "botsort": BOTSORT}[tracker_type]
-        self.tracker = cls(args=cfg, frame_rate=frame_rate)
+        try:
+            self.tracker = cls(args=cfg, frame_rate=frame_rate)
+        except TypeError:
+            self.tracker = cls(args=cfg)
 
     def reset(self):
         self.tracker.reset()
