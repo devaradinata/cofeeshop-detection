@@ -1,0 +1,19 @@
+{
+  "settings_version": "0.0.8",
+  "datasets_dir": "C:\\Users\\dinat\\Documents\\TUGAS KULIAH\\SEMESTER 3\\Kecerdasan Tiruan\\cofeeshop-detection\\datasets",
+  "weights_dir": "weights",
+  "runs_dir": "runs",
+  "uuid": "644f1ba9245aa68c403a82d99b49929c5aeb24db2ab70024b21abd70ac6f78f2",
+  "sync": true,
+  "api_key": "",
+  "openai_api_key": "",
+  "clearml": true,
+  "comet": true,
+  "dvc": true,
+  "mlflow": true,
+  "raytune": true,
+  "tensorboard": false,
+  "wandb": false,
+  "vscode_msg": true,
+  "openvino_msg": true
+}

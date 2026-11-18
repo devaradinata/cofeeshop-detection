@@ -1,7 +1,11 @@
 """Wrapper detektor YOLO (Phase 1)."""
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple, Set
+
+# Ensure Ultralytics settings dir stays local to avoid permission issues
+os.environ.setdefault("YOLO_CONFIG_DIR", str((Path(__file__).parent.parent / ".yolo_config").resolve()))
 
 import numpy as np
 from ultralytics import YOLO

@@ -70,6 +70,14 @@ class ProcessedFrame:
     metrics: OccupancyMetrics
     person_visibility_durations: Dict[int, float]
 
+    @property
+    def active_customers_count(self) -> int:
+        return len([p for p in self.tracked_persons if not getattr(p, "is_staff", False)])
+
+    @property
+    def staff_count(self) -> int:
+        return len([p for p in self.tracked_persons if getattr(p, "is_staff", False)])
+
 
 class CoffeeShopPipeline:
     def __init__(self, config: Optional[PipelineConfig] = None):
@@ -227,16 +235,24 @@ class CoffeeShopPipeline:
         # Blend table fill
         cv2.addWeighted(overlay, 0.25, vis, 0.75, 0, vis)
 
-        # 3. Draw Tracked Persons (with ID and tracking duration)
+        # 3. Draw Tracked Persons (Distinguish Customer vs Barista/Staff)
         for p in tracked_persons:
             x1, y1, x2, y2 = map(int, p.xyxy)
             vis_dur = self.state_machine.person_last_seen.get(p.track_id, timestamp) - \
                       self.state_machine.person_first_seen.get(p.track_id, timestamp)
-            cv2.rectangle(vis, (x1, y1), (x2, y2), (255, 200, 0), 2)
-            cv2.putText(vis, f"Person #{p.track_id} ({vis_dur:.1f}s)", (x1, max(y1 - 6, 12)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 200, 0), 1)
+            if getattr(p, "is_staff", False):
+                # Barista / Staff: Purple
+                box_color = (200, 80, 180)
+                label = f"Barista #{p.track_id} (Staff)"
+            else:
+                # Customer: Blue
+                box_color = (235, 99, 37)
+                label = f"Customer #{p.track_id} ({vis_dur:.1f}s)"
+            cv2.rectangle(vis, (x1, y1), (x2, y2), box_color, 2)
+            cv2.putText(vis, label, (x1, max(y1 - 6, 12)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.42, box_color, 1)
 
-        # 4. Draw Belongings
+        # 5. Draw Belongings
         for d in detections:
             if d.category == "belongings":
                 x1, y1, x2, y2 = map(int, d.xyxy)

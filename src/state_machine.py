@@ -144,11 +144,12 @@ class SeatingStateMachine:
 
             presence_duration = current_time - state.first_seen_person_time
             # Konfirmasi kehadiran temporal: orang yang hanya lewat sekilas (< confirmation_seconds)
-            # tidak langsung mengubah status meja menjadi OCCUPIED
+            # tidak langsung mengubah status meja, KECUALI ada barang bawaan atau meja sudah terisi
             is_confirmed = (
                 is_confirmed_immediately
-                or state.availability_state == AvailabilityState.OCCUPIED
+                or state.availability_state in (AvailabilityState.OCCUPIED, AvailabilityState.RESERVED_BY_BELONGINGS)
                 or presence_duration >= self.confirmation_seconds
+                or has_belongings
             )
 
             if is_confirmed:
@@ -171,6 +172,8 @@ class SeatingStateMachine:
 
                 state.occupancy_duration = state.current_session.duration(current_time)
                 state.belongings_duration = 0.0
+            elif has_belongings:
+                state.availability_state = AvailabilityState.RESERVED_BY_BELONGINGS
 
         else:
             state.first_seen_person_time = None

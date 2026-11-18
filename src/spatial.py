@@ -67,6 +67,9 @@ class SpatialAssociationResult:
     seat_belongings: Dict[str, List[Detection]] = field(default_factory=dict)  # seat_id -> [Detection]
     seat_ambiguous: Dict[str, bool] = field(default_factory=dict)              # seat_id -> bool
 
+    # Staff / Barista detections (excluded from customer metrics)
+    staff_persons: List[int] = field(default_factory=list)
+
     # Unassociated detections
     unassociated_persons: List[int] = field(default_factory=list)
     unassociated_belongings: List[Detection] = field(default_factory=list)
@@ -118,6 +121,9 @@ class SeatingLayout:
             data = json.load(f)
 
         self.video_resolution = tuple(data.get("video_resolution", [1280, 720]))
+        self.service_zone: Optional[Polygon] = None
+        if "service_zone" in data and "polygon" in data["service_zone"]:
+            self.service_zone = Polygon(data["service_zone"]["polygon"])
         self.tables.clear()
         self.seats.clear()
 
@@ -247,8 +253,21 @@ class SeatingLayout:
                     result.table_persons[t_id].append(p.track_id)
                     associated_any = True
 
-            if not associated_any:
-                result.unassociated_persons.append(p.track_id)
+            # Distinguish Barista / Staff vs Customer:
+            # - Anyone seated at a table is DEFINITELY a customer (associated_any == True).
+            # - All people on the left side (window seats, ordering queue, pickup counter with cx < 500)
+            #   are DEFINITELY CUSTOMERS (never staff).
+            # - ONLY staff strictly stationed behind the counter (cashier & espresso area: 500 <= cx <= 930)
+            #   whose lower body is occluded by the counter bar (y2 <= 270 and y1 <= 110) are staff.
+            x1, y1, x2, y2 = p.xyxy
+            cx = (x1 + x2) / 2.0
+            if not associated_any and (500 <= cx <= 930) and (y2 <= 270) and (y1 <= 110):
+                setattr(p, "is_staff", True)
+                result.staff_persons.append(p.track_id)
+            else:
+                setattr(p, "is_staff", False)
+                if not associated_any:
+                    result.unassociated_persons.append(p.track_id)
 
         # 2. Associate Belongings
         belongings_dets = [d for d in detections if d.category == "belongings"]
@@ -279,12 +298,16 @@ class SeatingLayout:
                 if (best_table[1] - second_table_score) < ambiguity_margin and second_table_score > 0:
                     result.table_ambiguous[t_id] = True
 
-                # Also associate with nearest seat at that table if overlapping
+                # Also associate with nearest seat at that table
+                seat_matched = False
                 for s in self.tables[t_id].seats:
                     s_ioa = intersection_over_box_area(b_poly, s.shapely)
                     if s_ioa >= min_belonging_ioa or s.shapely.contains(b_centroid):
                         result.seat_belongings[s.id].append(b)
+                        seat_matched = True
                         break
+                if not seat_matched and len(self.tables[t_id].seats) > 0:
+                    result.seat_belongings[self.tables[t_id].seats[0].id].append(b)
 
             if not associated_any:
                 result.unassociated_belongings.append(b)
